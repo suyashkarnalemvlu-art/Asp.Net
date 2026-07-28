@@ -1,0 +1,79 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
+
+namespace AuthDemo.Controllers
+{
+    public class HomeController : Controller
+    {
+        // Login Page
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        // Login Verification
+        [HttpPost]
+        public async Task<IActionResult> Index(string username, string password)
+        {
+            if (username == "admin" && password == "123")
+            {
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, username)
+                };
+
+                var identity = new ClaimsIdentity(
+                    claims,
+                    CookieAuthenticationDefaults.AuthenticationScheme);
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(identity));
+
+                return RedirectToAction("Secure");
+            }
+
+            ViewBag.Message = "Invalid Username or Password";
+            return View();
+        }
+
+        // Secure Page
+        [Authorize]
+        public IActionResult Secure()
+        {
+            return Content("Welcome! Login Successful.");
+        }
+
+        // Logout
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return RedirectToAction("Index");
+        }
+    }
+}
+Index.html
+<h2>Login</h2>
+
+<form method="post">
+
+    Username :
+    <input type="text" name="username" />
+    <br /><br />
+
+    Password :
+    <input type="password" name="password" />
+    <br /><br />
+
+    <input type="submit" value="Login" />
+
+</form>
+
+<p style="color:red">
+    @ViewBag.Message
+</p>
