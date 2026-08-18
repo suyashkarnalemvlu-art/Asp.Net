@@ -1,0 +1,146 @@
+Program.cs:-
+using Microsoft.EntityFrameworkCore;
+using StudentAPIWithEF.Data;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(
+    builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
+
+StudentController.cs:-
+using Microsoft.AspNetCore.Mvc;
+using StudentAPIWithEF.Data;
+using StudentAPIWithEF.Models;
+
+namespace StudentAPIWithEF.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class StudentsController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public StudentsController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        // GET: api/Students
+        [HttpGet]
+        public IActionResult GetStudents()
+        {
+            return Ok(_context.Students.ToList());
+        }
+
+        // GET: api/Students/1
+        [HttpGet("{id}")]
+        public IActionResult GetStudent(int id)
+        {
+            var student = _context.Students.Find(id);
+
+            if (student == null)
+                return NotFound();
+
+            return Ok(student);
+        }
+
+        // POST: api/Students
+        [HttpPost]
+        public IActionResult AddStudent(Student student)
+        {
+            _context.Students.Add(student);
+            _context.SaveChanges();
+
+            return Ok(student);
+        }
+
+        // PUT: api/Students/1
+        [HttpPut("{id}")]
+        public IActionResult UpdateStudent(int id, Student student)
+        {
+            var data = _context.Students.Find(id);
+
+            if (data == null)
+                return NotFound();
+
+            data.Name = student.Name;
+            data.Age = student.Age;
+            data.Course = student.Course;
+
+            _context.SaveChanges();
+
+            return Ok(data);
+        }
+
+        // DELETE: api/Students/1
+        [HttpDelete("{id}")]
+        public IActionResult DeleteStudent(int id)
+        {
+            var student = _context.Students.Find(id);
+
+            if (student == null)
+                return NotFound();
+
+            _context.Students.Remove(student);
+            _context.SaveChanges();
+
+            return Ok();
+        }
+    }
+}
+
+Appsettings.json:-
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=StudentDB;Trusted_Connection=True;"
+  }
+}
+
+AppDbContext.cs:-
+using Microsoft.EntityFrameworkCore;
+using StudentAPIWithEF.Models;
+namespace StudentAPIWithEF.Data
+{
+    public class AppDbContext:DbContext     
+    {
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        { 
+        }
+        public DbSet<Student> Students { get; set; }
+    }
+}
+
+Student.cs:-
+namespace StudentAPIWithEF.Models
+{
+    public class Student
+    {
+        public int ID { get; set; }
+        public required string Name { get; set; }    
+        public int Age { get; set; }    
+        public required string Course { get; set; }
+
+    }
+}
